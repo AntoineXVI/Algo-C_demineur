@@ -3,159 +3,565 @@
 #include <stdbool.h>
 #include <time.h>
 
-void printNumero();
-void tabActuel(char tab[], int bomb[], int idBomb);
+#define size 10
+
+void printNumero(int row);
+int scanCoordonee(int max, int min, char* message);
+void isBomb(int matrice[size][size], int bomb[size][size], int rowMax);
+void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI1, int choixJ1, int rowMax);
+void isBomb2(int matrice[size][size], int bomb[size][size], int rowMax);
 
 
 
 int main()
 {
-    // On commence par initialiser le générateur de nombre pseudo-aléatoires.
+    // On commence par initialiser le générateur de nombre aléatoires.
     srand(time(NULL));
-    while (true)
+
+    // On initialise les variables pour la taille de la matrice.
+    int row = 3;
+
+    printf(" Entrez le nombre de lignes (min 3 et max 10)\n");
+    
+    while (((scanf_s("%d", &row)) != 1) || (row > 10) || (row < 3))
     {
-        while (true) {
-            int bomb[20];                           //initialise le tab des bombes
-            int idBomb = 0;
+        printf("erreur de scan. reessayez.\n");
+        printf(" Entrez le nombre de lignes (min 3 et max 10)\n");
+    }
+    int col = row;      //grille caree donc ligne = collonne.
 
-            // Tirer une valeur aléatoire entre 0 et 100.
-            int bombe = rand() % 101;
-            bomb[idBomb] = bombe;                //stocke les cases des bombes dans un tableau
-            idBomb += 1;
+    // On initialise la matrice pour stocker les bombes.
+    int bomb[size][size];
 
-
-
-            char tab[100];
-            for (int i = 0; i < 100; i++)
-            {
-                tab[i] = "|X|";
-            }
-
-            printNumero();
-
-            for (int i = 0; i < 100; i++)
-            {
-                printf("%c", tab[i]);
-
-                if (((i + 1) % 10) == 0)
-                {
-                    printf("\n");
-
-                }
-            }
-            printf("choisisez la case a detruire\n");
-            int choix;
-            if ((scanf_s("%d", &choix)) != 1)
-            {
-                printf("erreur de scan\n");
-                return EXIT_FAILURE;
-            }
-            while (choix >= 100)
-            {
-                printf("erreur, choissisez une case du tableau non utilisé\n");
-                if ((scanf_s("%d", &choix)) != 1)
-                {
-                    printf("erreur de scan\n");
-                    return EXIT_FAILURE;
-                }
-            }
-            for (int k = idBomb; k >= 0; k--)
-            {
-                if (bomb[k] == choix)
-                {
-                    printf("bombe touche. Game over. la valeur de la bombe est %d\n", bomb[k]);
-                    return 0;
-                }
-            }
-
-            printf("bombe non touche. Bravo,continue!\n");
-            tab[choix] = "| |";
-
-            tabActuel(tab, bomb, idBomb);
-
-        }
-        printf("Game Over. Belle partie.voulez vous recommencer ?\n");
-        int sortie;
-        if ((scanf_s("%d", &sortie)) != 1)
+    for (int i = 0; i < row; i++)
+    {
+        for (int j = 0; j < col; j++)
         {
-            printf("erreur de scan\n");
-            return EXIT_FAILURE;
+            bomb[i][j] = 0;
         }
-        if (sortie == 0)
+    }
+
+    // On initialise la matrice de jeu.
+    int matrice[size][size];
+
+    for (int i = 0; i < row; i++)
+    {
+        for (int j = 0; j < col; j++)
         {
+            matrice[i][j] = 0;
+        }
+    }  
+
+    // On initialise la matriceVisual.
+    int matriceVisual[size][size];
+
+    for (int i = 0; i < row; i++)
+    {
+        for (int j = 0; j < row; j++)
+        {
+            matriceVisual[i][j] = 9;
+        }
+    }
+
+    bool tour1 = true;
+    bool loose = false;
+    while (loose == false)
+    {
+        printf("choisisez les coordonees de la ");
+        if (tour1 == true)
+        {
+            printf("premiere ");
+        }
+        printf("case a detruire.\n");
+
+        if (tour1 == true)
+        {
+            printNumero(row);
+            for (int i = 0; i < row; i++)
+            {
+                for (int j = 0; j < col; j++)
+                {
+                    printf("%3d", matrice[i][j]);                   //affiche la grille de jeu.
+                }
+                printf("\n");
+            }
+        }
+
+        int choixI = scanCoordonee(row, 0, "ligne");
+        int choixJ = scanCoordonee(col, 0, "colonne");
+        while (matrice[choixI][choixJ] == 1)
+        {
+            printf("erreur, choissisez une case du tableau non utilisé \n");
+            int choixI = scanCoordonee(row, 0, "ligne");
+            int choixJ = scanCoordonee(col, 0, "colonne");
+        }
+        
+        if (bomb[choixI][choixJ] == 1)
+        {
+            printf("bombe touche. Game over.\n");
+            loose = true;
             break;
+        }
+
+        if (tour1 != true)
+        {
+            printf("Bombe non touche. Bravo,continue!\n");
+        }
+        else
+        {
+            printf("Premiere case jouee,continue!\n");
+            
+        }
+        matrice[choixI][choixJ] = 1;
+        int choixI1 = choixI;
+        int choixJ1 = choixJ;
+
+        if (tour1 == true)
+        {
+            for (int i = 0; i < row - 1; i++)
+            {
+                int coordI = rand() % row;      // Tirer deux coordonees aléatoire entre 0 et la longueur max du tableau seulement au tour 1.
+                int coordJ = rand() % row;
+                while (matrice[coordI][coordJ] == 1)
+                {
+                    int coordI = rand() % row;    //Si la bombe est placé sur la 1ere case du joueur,rechoissir des novelles coordonees.
+                    int coordJ = rand() % row;
+                }
+
+                bomb[coordI][coordJ] = 1;       //placer les bombes dans la grille.
+            }
+            tour1 = false;
+        }
+
+        printf("grille bomb\n");
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                printf("%3d", bomb[i][j]);          //affiche la grille de bombe avec la bombe pour les tests.
+            }
+            printf("\n");
+        }
+        printf("\n");
+       
+        isBomb(matrice, bomb, row);             //calcule les bombes proche de chaques cases.
+
+        printf("grille jeu apres isBomb\n");
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                printf("%3d", matrice[i][j]);          //grille jeu apres le calcul pour les tests.
+            }
+            printf("\n");
+        }
+        printf("\n");
+
+        isBomb2(matrice, bomb, row);             //calcule les bombes proche de chaques cases.
+
+        printf("grille jeu apres isBomb2\n");
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                printf("%3d", matrice[i][j]);          //grille jeu apres le calcul pour les tests.
+            }
+            printf("\n");
+        }
+        printf("\n");
+
+
+        isVisual(matrice, matriceVisual, choixI1, choixJ1, row); //affiche les cases visibles grace la grille de jeu et au dernier tour.
+
+
+        printNumero(row);
+        
+        for (int i = 0; i < row; i++)
+        {
+            for (int j = 0; j < col; j++)
+            {
+                 printf("%3d", matriceVisual[i][j]);                   //affiche la grille de jeu.
+                
+            }
+            printf("\n");
         }
     }
     printf("Fin de partie.\n");
     return EXIT_SUCCESS;
 }
 
-void printNumero()
+void printNumero(int row)
 {
-    for (int i = 1; i <= 10; i++)
+    printf(" ");
+    for (int i = 0; i < row; i++)
     {
         printf("|%d|", i);
     }
-    printf("\n");
+    printf("\n\n");
 }
 
-void tabActuel(char tab[], int bomb[], int idBomb)  //actualise le tab en calculant les numero indices des cases en fonction du tab ancien, de la liste de bomb et l'id de la derniere bombe du tab de bomb
-{
-    for (int i = 0; i <= 100; i++)
+int scanCoordonee(int max, int min, char* message ) //fonction permettant de demander le choix de row/col et return l'int de la row/col avec comme
+{                                                  //parametre le message pour demander ligne ou col, et le min et max possible.
+    int coord;
+    printf("choississez un numero de %s entre %d et %d\n", message,min,(max -1));
+
+    while (((scanf_s(" %d", &coord)) != 1) || (coord > (max - 1) || coord < (min - 1)))
     {
-        if (tab[i] == "| |")         //si la case est vide...
+        printf("erreur de scan. Reessayez.\n");
+        printf("choississez un numero de %s entre %d et %d\n", message, min, (max - 1));
+    }
+    return coord;
+}
+
+void isBomb(int matrice[size][size], int bomb[size][size], int rowMax)     //fonction permettant d'afficher le nombre de bombes proches des cases avec comme
+{                                                       //parametre la grille de bombe et la grille de jeu, et la longeur du tableau.
+    rowMax = rowMax - 1;  //indice max de la grille
+    int countBomb = 0;
+    for (int row = 1; row < rowMax; row++)      //boucle de la premiere ligne à l'avant derniere.
+    {
+        for (int col = 1; col < rowMax; col++)   //boucle de la premiere colonne à l'avant derniere.
         {
-            int countBomb = 0;
-            for(int k = idBomb; k >= 0; k--)                    //...claculer le nombre de bombes proches
+            if ((bomb[row][col - 1]) == 1)
             {
-                if (tab[i - 11] == bomb[k])
-                {
-                    countBomb += 1;
-                }
+                countBomb += 1;
+            }
+            if ((bomb[row][col +1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row + 1][col]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row - 1][col]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row - 1][col - 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row + 1][col + 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row - 1][col + 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row + 1][col - 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            matrice[row][col] = countBomb;
+            countBomb = 0;
+        }
+    }
+    for (int col = 1; col < rowMax; col++)          //coté haut
+    {
+        if ((bomb[0][col - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[0][col + 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[1][col]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[1][col + 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[1][col - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        matrice[0][col] = countBomb;
+        countBomb = 0;
+    }
+    for (int col = 1; col < rowMax; col++)          //coté bas
+    {
+        if ((bomb[rowMax][col - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[rowMax][col + 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[rowMax - 1][col]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[rowMax - 1][col + 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[rowMax - 1][col - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        matrice[rowMax][col] = countBomb;
+        countBomb = 0;
+    }
+    for (int row = 1; row < rowMax; row++)          //coté gauche
+    {
+        if ((bomb[row][1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row - 1][1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row - 1][0]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row + 1][1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row + 1][0]) == 1)
+        {
+            countBomb += 1;
+        }
+        matrice[row][0] = countBomb;
+        countBomb = 0;
+    }
+    for (int row = 1; row < rowMax; row++)          //coté droit
+    {
+        if ((bomb[row][rowMax - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row - 1][rowMax]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row - 1][rowMax - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row + 1][rowMax]) == 1)
+        {
+            countBomb += 1;
+        }
+        if ((bomb[row + 1][rowMax - 1]) == 1)
+        {
+            countBomb += 1;
+        }
+        matrice[row][rowMax] = countBomb;
+        countBomb = 0;
+    }
+    if((bomb[0][1]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[1][0]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[1][1]) == 1)
+    {
+        countBomb += 1;
+    }
+    matrice[0][0] = countBomb;          //coin haut gauche
 
-                if (tab[i - 10] == bomb[k])
-                {
-                    countBomb += 1;
-                }
+    countBomb = 0;
+    if ((bomb[0][rowMax - 1]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[1][rowMax]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[1][rowMax - 1]) == 1)
+    {
+        countBomb += 1;
+    }
+    matrice[0][rowMax] = countBomb;       //coin haut droite
+    
+    countBomb = 0;
+    if ((bomb[rowMax - 1][0]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[rowMax][1]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[rowMax - 1][1]) == 1)
+    {
+        countBomb += 1;
+    }
+    matrice[rowMax][0] = countBomb;           //coin bas gauche
 
-                if (tab[i - 9] == bomb[k])
-                {
-                    countBomb += 1;
-                }
+    countBomb = 0;
+    if ((bomb[rowMax][rowMax - 1]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[rowMax - 1][rowMax]) == 1)
+    {
+        countBomb += 1;
+    }
+    if ((bomb[rowMax - 1][rowMax - 1]) == 1)
+    {
+        countBomb += 1;
+    }
+    matrice[rowMax][rowMax] = countBomb;      //coin bas droite
+}
 
-                if (tab[i - 1] == bomb[k])
-                {
-                    countBomb += 1;
-                }
+void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI1, int choixJ1, int rowMax)//fonction permettant d'afficher les cases visible pour le 
+{                                           //joueur avec comme parametre la grille de visuel et la grille de jeu,la case1 et la longeur du tableau (init a -1au debut).
+    if (choixI1 < 0 || choixJ1 < 0)
+    {
+        printf("erreur: coordonees negatives\n");
+    }
+    else
+    {
+        rowMax = rowMax - 1;
 
-                if (tab[i + 1] == bomb[k])
-                {
-                    countBomb += 1;
-                }
+        matriceVisual[choixI1][choixJ1] = matrice[choixI1][choixJ1];
 
-                if (tab[i + 9] == bomb[k])
+        if (choixI1 > 0)
+        {
+            matriceVisual[choixI1 - 1][choixJ1] = matrice[choixI1 - 1][choixJ1];
+            if (choixJ1 != rowMax)
+            {
+                matriceVisual[choixI1][choixJ1 + 1] = matrice[choixI1][choixJ1 + 1];
+                matriceVisual[choixI1 - 1][choixJ1 + 1] = matrice[choixI1 - 1][choixJ1 + 1];
+            }
+            if (choixJ1 > 0)
+            {
+                matriceVisual[choixI1][choixJ1 - 1] = matrice[choixI1][choixJ1 - 1];
+                matriceVisual[choixI1 - 1][choixJ1 - 1] = matrice[choixI1 - 1][choixJ1 - 1];
+            }
+        }
+        if (choixI1 != rowMax)
+        {
+            matriceVisual[choixI1 + 1][choixJ1] = matrice[choixI1 + 1][choixJ1];
+            if (choixJ1 > 0)
+            {
+                matriceVisual[choixI1][choixJ1 - 1] = matrice[choixI1][choixJ1 - 1];
+                matriceVisual[choixI1 + 1][choixJ1 - 1] = matrice[choixI1 + 1][choixJ1 - 1];
+            }
+            if (choixJ1 < rowMax)
+            {
+                matriceVisual[choixI1][choixJ1 + 1] = matrice[choixI1][choixJ1 + 1];
+                matriceVisual[choixI1 + 1][choixJ1 + 1] = matrice[choixI1 + 1][choixJ1 + 1];
+            }
+        }
+    }
+}
+
+void isBomb2(int matrice[size][size], int bomb[size][size], int rowMax)
+{
+    int countBomb = 0;
+    for (int row = 0; row < rowMax; row++)      
+    {
+        for (int col = 0; col < rowMax; col++)   
+        {
+            if (row > 0)
+            {
+                if (bomb[row - 1][col] == 1)
                 {
                     countBomb += 1;
                 }
-                
-                if (tab[i + 10] == bomb[k])
+                if (col != rowMax)
                 {
-                    countBomb += 1;
+                    if (bomb[row][col + 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
+                    if (bomb[row - 1][col + 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
                 }
-                
-                if (tab[i + 11] == bomb[k])
+                if (col > 0)
                 {
-                    countBomb += 1;
+                    if (bomb[row][col - 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
+                    if (bomb[row - 1][col - 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
                 }
             }
-            tab[i] = "|(char)countBomb|";
-            printf("%c", tab[i]);
-        }
-        printf("%c", tab[i]);
-        if (((i + 1) % 10) == 0)
-        {
-            printf("\n");
+            if (row != rowMax)
+            {
+                if (bomb[row + 1][col] == 1)
+                {
+                    countBomb += 1;
+                }
+                if (col > 0)
+                {
+                    if (bomb[row][col - 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
+                    if (bomb[row + 1][col - 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
+                }
+                if (col < rowMax)
+                {
+                    if (bomb[row][col + 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
+                    if (bomb[row + 1][col + 1] == 1)
+                    {
+                        countBomb += 1;
+                    }
+                }
+            }
+            matrice[row][col] = countBomb;
+            countBomb = 0;
 
+            /*if ((bomb[row][col - 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row][col + 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row + 1][col]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row - 1][col]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row - 1][col - 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row + 1][col + 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row - 1][col + 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            if ((bomb[row + 1][col - 1]) == 1)
+            {
+                countBomb += 1;
+            }
+            matrice[row][col] = countBomb;
+            countBomb = 0;*/
         }
     }
 }
