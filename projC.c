@@ -7,12 +7,14 @@
 #define RowMax 10
 #define RowMin 3
 
+void initMatrice(int matrice[size][size], int valeurDepart, int rowMax);
+void printMatrice(int matriceAAfficher[size][size], int matriceCondition[size][size], char* couleur, int rowMax, int condition);
 void printNumero(int row);
 int scanCoordonee(int max, int min, char* message);
-void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI1, int choixJ1, int rowMax, bool tour1);
-void isZero(int matrice[size][size],int matriceVisual[size][size], int matriceVisual2[size][size], int choixI1, int choixJ1, int rowMax, bool tour1);
+void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI1, int choixJ1, int rowMax);
+void isZero(int matrice[size][size],int matriceVisual[size][size], int matriceVisual2[size][size], int choixI1, int choixJ1, int rowMax);
 void isBomb(int matrice[size][size], int bomb[size][size], int rowMax);
-bool isWin(int matriceVisual[size][size], int rowMax, int nbBomb);
+bool isWin(int matriceVisual[size][size], int rowMax, int nbBomb, int *score);
 void red();
 void green();
 void yellow();
@@ -24,6 +26,8 @@ void reset();
 int main()
 {
     int rejouer = 1;
+    int score = 0;
+    int loose = 0;
     while (rejouer == 1)
     {
         // On commence par initialiser le générateur de nombre aléatoires.
@@ -45,49 +49,28 @@ int main()
 
         // On initialise la matrice pour stocker les bombes.
         int bomb[size][size];
-
-        for (int i = 0; i < row; i++)
-        {
-            for (int j = 0; j < col; j++)
-            {
-                bomb[i][j] = 0;
-            }
-        }
+        initMatrice(bomb, 0,row);
 
         // On initialise la matrice de jeu.
         int matrice[size][size];
-
-        for (int i = 0; i < row; i++)
-        {
-            for (int j = 0; j < col; j++)
-            {
-                matrice[i][j] = 0;
-            }
-        }
+        initMatrice(matrice, 0, row);
 
         // On initialise la matriceVisual.
         int matriceVisual[size][size];
+        initMatrice(matriceVisual, 9, row);
 
-        for (int i = 0; i < row; i++)
-        {
-            for (int j = 0; j < row; j++)
-            {
-                matriceVisual[i][j] = 9;
-            }
-        }
-
+        // On initialise la matriceVisual2.
         int matriceVisual2[size][size];     //matrice bonus pour valider les cases avec 0.
+        initMatrice(matriceVisual2, 0, row);
 
-        for (int i = 0; i < row; i++)
+        int nbBomb = row - 1;        // nombre de bomb en fonction de la taille
+        if (row > 5)            //si la grille est tres grande , doubler le nombre de bombes.
         {
-            for (int j = 0; j < row; j++)
-            {
-                matriceVisual2[i][j] = 0;
-            }
+            nbBomb = nbBomb * 2;
         }
 
         bool tour1 = true;
-        while (isWin(matriceVisual, row, (row - 1)))
+        while (isWin(matriceVisual, row, nbBomb, &score))
         {
             printf("choisisez les coordonees de la ");
             if (tour1 == true)
@@ -98,17 +81,7 @@ int main()
 
             if (tour1 == true)
             {
-                printNumero(row);
-                for (int i = 0; i < row; i++)
-                {
-                    for (int j = 0; j < col; j++)
-                    {
-                        green();
-                        printf("%3d", matrice[i][j]);                   //affiche la grille de jeu.
-                        reset();
-                    }
-                    printf("\n");
-                }
+                printMatrice(matrice,matriceVisual, "green", row, -1);
             }
 
             int choixI = scanCoordonee(row, 0, "ligne");
@@ -123,6 +96,9 @@ int main()
             if (bomb[choixI][choixJ] == 1)
             {
                 printf("bombe touche. Game over.\n");
+                loose += 1;
+                printf("voici la grille complete avec les bombes\n"); //affiche la grille de bombe avec la bombe pour les tests.
+                printMatrice(matrice, matrice, "green", row, 9);
                 break;
             }
 
@@ -140,9 +116,10 @@ int main()
             int choixI1 = choixI;
             int choixJ1 = choixJ;
 
+            
             if (tour1 == true)
             {
-                for (int i = 0; i < row - 1; i++)
+                for (int i = 0; i < nbBomb; i++)
                 {
                     int coordI = rand() % row;      // Tirer deux coordonees aléatoire entre 0 et la longueur max du tableau seulement au tour 1.
                     int coordJ = rand() % row;
@@ -150,59 +127,18 @@ int main()
                     {
                         coordI = rand() % row;    //Si la bombe est placé sur la 1ere case du joueur,rechoissir des novelles coordonees.
                         coordJ = rand() % row;
-                        printf("je cherche a placer une bombe\n");
                     }
-
                     bomb[coordI][coordJ] = 1;       //placer les bombes dans la grille.
                 }
             }
-
-            printf("grille bomb\n");
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < col; j++)
-                {
-                    red();
-                    printf("%3d", bomb[i][j]);          //affiche la grille de bombe avec la bombe pour les tests.
-                    reset();
-                }
-                printf("\n");
-            }
-            printf("\n");
-
             isBomb(matrice, bomb, row);             //calcule les bombes proche de chaques cases.
 
-            printf("grille jeu apres isBomb\n");
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < col; j++)
-                {
-                    printf("%3d", matrice[i][j]);          //grille jeu apres le calcul pour les tests.
-                }
-                printf("\n");
-            }
-            printf("\n");
+            isVisual(matrice, matriceVisual, choixI1, choixJ1, row); //rend visibles les cases grace la grille de jeu à chaque tour.
+            isZero(matrice, matriceVisual, matriceVisual2, choixI1, choixJ1, row); //affiche les cases autour des 0.
+            
+            printMatrice(matriceVisual, matriceVisual, "0", row, 9);
 
-            isVisual(matrice, matriceVisual, choixI1, choixJ1, row, tour1); //rend visibles les cases grace la grille de jeu et au dernier tour.
-            isZero(matrice,matriceVisual, matriceVisual2, choixI1, choixJ1, row, tour1); //affiche les cases autour des 0.
-
-            printNumero(row);
-
-            for (int i = 0; i < row; i++)
-            {
-                for (int j = 0; j < col; j++)
-                {
-                    if (matriceVisual[i][j] == 9)
-                    {
-                        purple();
-                    }
-                    printf("%3d", matriceVisual[i][j]);                   //affiche la grille de jeu.
-                    reset();
-                }
-                printf("\n");
-            }
             tour1 = false;
-
         }
         printf("Fin de partie.Veux tu rejouer ? ( 0 / 1)\n");
         while ((scanf_s("%d", &rejouer) != 1) || ((rejouer != 1) && (rejouer != 0)))
@@ -212,13 +148,58 @@ int main()
         }
         printf("\n");
     }
-    printf("tu as choisi d'arreter . Bonne journee!\n");
+    printf("tu as choisi d'arreter. Bonne journee!\n");
+    printf("ton score est de %d victoire(s) et de %d defaite(s).\n", score, loose);
+    printf("Bonne journee!\n");
     return EXIT_SUCCESS;
 }
 
+
+void initMatrice(int matrice[size][size], int valeurDepart, int rowMax) //fonction pour init un ematrice avec une valeur defini
+{
+    for (int i = 0; i < rowMax; i++)
+    {
+        for (int j = 0; j < rowMax; j++)
+        {
+            matrice[i][j] = valeurDepart;  
+        }
+    }
+}
+
+void printMatrice(int matriceAAfficher[size][size], int matriceCondition[size][size], char* couleur, int rowMax, int condition) //fonction pour print une matrice avec une couleur defini
+{       // avec la matrice a afficher et sa taille, la couleur s'il y en a sinon "0", la condition pour la couleur sinon -1.
+    printNumero(rowMax);
+    for (int i = 0; i < rowMax; i++)
+    {
+        yellow();
+        printf("|%d|", i);
+        reset();
+        for (int j = 0; j < rowMax; j++)
+        {
+            if ((condition != -1) && (matriceCondition[i][j] == condition)) // si la case a une valeur defini
+            {
+                purple(); //change la grille en violet
+            }
+            else if (couleur != "0")
+            {
+                if (couleur == "green")
+                {
+                    green();  //change la grille en vert
+                }
+                if (couleur == "red")
+                {
+                    red(); //change la grille en rouge
+                }
+            }
+            printf("%3d", matriceAAfficher[i][j]);        //affiche la grille.
+            reset();
+        }
+        printf("\n");
+    }
+}
 void printNumero(int row)
 {
-    printf(" ");
+    printf("    ");
     for (int i = 0; i < row; i++)
     {
         yellow();
@@ -241,8 +222,9 @@ int scanCoordonee(int max, int min, char* message ) //fonction permettant de dem
     return coord;
 }
 
-void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI1, int choixJ1, int rowMax, bool tour1)//fonction permettant d'afficher
-{   //les cases visible pour le joueur avec comme parametre la grille visuel et jeu,du X et Y de la case, la longeur du tableau et un bool pour tour1.
+
+void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI1, int choixJ1, int rowMax)//fonction permettant d'afficher
+{   //les cases visible pour le joueur avec comme parametre la grille visuel et jeu,du X et Y de la case, et la longeur du tableau.
     if (choixI1 < 0 || choixJ1 < 0)
     {
         printf("erreur: coordonees negatives\n");
@@ -253,41 +235,38 @@ void isVisual(int matrice[size][size], int matriceVisual[size][size], int choixI
         rowMax = rowMax - 1;
 
         matriceVisual[choixI1][choixJ1] = matrice[choixI1][choixJ1];
-        if (tour1 == true)
+        if (choixI1 > 0)
         {
-            if (choixI1 > 0)
+            matriceVisual[choixI1 - 1][choixJ1] = matrice[choixI1 - 1][choixJ1];
+            if (choixJ1 != rowMax)
             {
-                matriceVisual[choixI1 - 1][choixJ1] = matrice[choixI1 - 1][choixJ1];
-                if (choixJ1 != rowMax)
-                {
-                    matriceVisual[choixI1][choixJ1 + 1] = matrice[choixI1][choixJ1 + 1];
-                    matriceVisual[choixI1 - 1][choixJ1 + 1] = matrice[choixI1 - 1][choixJ1 + 1];
-                }
-                if (choixJ1 > 0)
-                {
-                    matriceVisual[choixI1][choixJ1 - 1] = matrice[choixI1][choixJ1 - 1];
-                    matriceVisual[choixI1 - 1][choixJ1 - 1] = matrice[choixI1 - 1][choixJ1 - 1];
-                }
+                matriceVisual[choixI1][choixJ1 + 1] = matrice[choixI1][choixJ1 + 1];
+                matriceVisual[choixI1 - 1][choixJ1 + 1] = matrice[choixI1 - 1][choixJ1 + 1];
             }
-            if (choixI1 != rowMax)
+            if (choixJ1 > 0)
             {
-                matriceVisual[choixI1 + 1][choixJ1] = matrice[choixI1 + 1][choixJ1];
-                if (choixJ1 > 0)
-                {
-                    matriceVisual[choixI1][choixJ1 - 1] = matrice[choixI1][choixJ1 - 1];
-                    matriceVisual[choixI1 + 1][choixJ1 - 1] = matrice[choixI1 + 1][choixJ1 - 1];
-                }
-                if (choixJ1 < rowMax)
-                {
-                    matriceVisual[choixI1][choixJ1 + 1] = matrice[choixI1][choixJ1 + 1];
-                    matriceVisual[choixI1 + 1][choixJ1 + 1] = matrice[choixI1 + 1][choixJ1 + 1];
-                }
+                matriceVisual[choixI1][choixJ1 - 1] = matrice[choixI1][choixJ1 - 1];
+                matriceVisual[choixI1 - 1][choixJ1 - 1] = matrice[choixI1 - 1][choixJ1 - 1];
+            }
+        }
+        if (choixI1 != rowMax)
+        {
+            matriceVisual[choixI1 + 1][choixJ1] = matrice[choixI1 + 1][choixJ1];
+            if (choixJ1 > 0)
+            {
+                matriceVisual[choixI1][choixJ1 - 1] = matrice[choixI1][choixJ1 - 1];
+                matriceVisual[choixI1 + 1][choixJ1 - 1] = matrice[choixI1 + 1][choixJ1 - 1];
+            }
+            if (choixJ1 < rowMax)
+            {
+                matriceVisual[choixI1][choixJ1 + 1] = matrice[choixI1][choixJ1 + 1];
+                matriceVisual[choixI1 + 1][choixJ1 + 1] = matrice[choixI1 + 1][choixJ1 + 1];
             }
         }
     }
 }
     
-void isZero(int matrice[size][size],int matriceVisual[size][size], int matriceVisual2[size][size], int choixI1, int choixJ1, int rowMax, bool tour1)
+void isZero(int matrice[size][size],int matriceVisual[size][size], int matriceVisual2[size][size], int choixI1, int choixJ1, int rowMax)
 {                // permet de découvrir une plus grande zone s'il y a des 0.
     int isSame = 0;
     while (true)
@@ -296,10 +275,91 @@ void isZero(int matrice[size][size],int matriceVisual[size][size], int matriceVi
         {
             for (int j = 0; j < rowMax; j++)
             {
-                if (matriceVisual[i][j] == 0 && matriceVisual2[i][j] == 0) //si la case est un 0 et qu'elle n'est pas deja valide
+                if (matriceVisual[i][j] != 9)  //si la case est visible
                 {
-                    isVisual(matrice, matriceVisual, i, j, rowMax, tour1);  //on decouvre les cases autour
-                    matriceVisual2[i][j] = 1;                   // et on valide la case dans une autre matrice.
+                    if (i > 0)
+                    {
+                        if ((matrice[i - 1][j] == 0) && (matriceVisual2[i - 1][j] == 0)) //si la case d'au dessus vaut 0 et qu'elle n'est pas deja validé
+                        {
+                            matriceVisual[i - 1][j] = matrice[i - 1][j];        //afficher sur la grille.
+                            matriceVisual2[i - 1][j] = 1;                   // et on valide la case dans une autre matrice.
+                            isSame += 1;            // le nombre de case qui changent.
+                        }
+                        if (j != rowMax)
+                        {
+                            if ((matrice[i][j + 1] == 0) && (matriceVisual2[i][j + 1] == 0))
+                            {
+                                matriceVisual[i][j + 1] = matrice[i][j + 1];        //afficher sur la grille.
+                                matriceVisual2[i][j + 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                            if ((matrice[i - 1][j + 1] == 0) && (matriceVisual2[i - 1][j + 1] == 0))
+                            {
+                                matriceVisual[i - 1][j + 1] = matrice[i - 1][j + 1];        //afficher sur la grille.
+                                matriceVisual2[i - 1][j + 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                        }
+                        if (j > 0)
+                        {
+                            if ((matrice[i][j - 1] == 0) && (matriceVisual2[i][j - 1] == 0))
+                            {
+                                matriceVisual[i][j - 1] = matrice[i][j - 1];        //afficher sur la grille.
+                                matriceVisual2[i][j - 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                            if ((matrice[i - 1][j - 1] == 0) && (matriceVisual2[i - 1][j - 1] == 0))
+                            {
+                                matriceVisual[i - 1][j - 1] = matrice[i - 1][j - 1];        //afficher sur la grille.
+                                matriceVisual2[i - 1][j - 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                        }
+                    }
+                    if (i != rowMax)
+                    {
+                        if ((matrice[i + 1][j] == 0) && (matriceVisual2[i + 1][j] == 0))
+                        {
+                            matriceVisual[i + 1][j] = matrice[i + 1][j];        //afficher sur la grille.
+                            matriceVisual2[i + 1][j] = 1;                   // et on valide la case dans une autre matrice.
+                            isSame += 1;            // le nombre de case qui changent.
+                        }
+                        if (j > 0)
+                        {
+                            if ((matrice[i][j - 1] == 0) && (matriceVisual2[i][j - 1] == 0))
+                            {
+                                matriceVisual[i][j - 1] = matrice[i][j - 1];        //afficher sur la grille.
+                                matriceVisual2[i][j - 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                            if ((matrice[i + 1][j - 1] == 0) && (matriceVisual2[i + 1][j - 1] == 0))
+                            {
+                                matriceVisual[i + 1][j - 1] = matrice[i + 1][j - 1];        //afficher sur la grille.
+                                matriceVisual2[i + 1][j - 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                        }
+                        if (j < rowMax)
+                        {
+                            if ((matrice[i][j + 1] == 0) && (matriceVisual2[i][j + 1] == 0))
+                            {
+                                matriceVisual[i][j + 1] = matrice[i][j + 1];        //afficher sur la grille.
+                                matriceVisual2[i][j + 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                            if ((matrice[i + 1][j + 1] == 0) && (matriceVisual2[i + 1][j + 1] == 0))
+                            {
+                                matriceVisual[i + 1][j + 1] = matrice[i + 1][j + 1];        //afficher sur la grille.
+                                matriceVisual2[i + 1][j + 1] = 1;                   // et on valide la case dans une autre matrice.
+                                isSame += 1;            // le nombre de case qui changent.
+                            }
+                        }
+                    }
+                }
+                if ((matriceVisual[i][j] == 0) && (matriceVisual2[i][j] != 2)) //si la case est un 0 et qu'elle n'est pas deja valide
+                {
+                    isVisual(matrice, matriceVisual, i, j, rowMax);  //on decouvre les cases autour
+                    matriceVisual2[i][j] = 2;                   // et on valide la case dans une autre matrice.
                     isSame += 1;            // le nombre de case qui changent.
                 }
             }
@@ -388,8 +448,8 @@ void isBomb(int matrice[size][size], int bomb[size][size], int rowMax) //fonctio
     }
 }
 
-bool isWin(int matriceVisual[size][size], int rowMax, int nbBomb) //fonction permettant de calculer la win avec comme
-{                                                               //parametres le tableau et sa taille, et le nombre de bombes.
+bool isWin(int matriceVisual[size][size], int rowMax, int nbBomb,int *score) //fonction permettant de calculer la win 
+{
     int countCaseVide = 0;
     for (int i = 0; i < rowMax; i++)
     {
@@ -403,6 +463,8 @@ bool isWin(int matriceVisual[size][size], int rowMax, int nbBomb) //fonction per
     }
     if (countCaseVide <= nbBomb)
     {
+        printf("bravo, tu as gagne! \n");
+        *score += 1;
         return false;
     }
     else
@@ -410,8 +472,6 @@ bool isWin(int matriceVisual[size][size], int rowMax, int nbBomb) //fonction per
         return true;
     }
 }
-
-
 
 void red()
 {
@@ -430,8 +490,6 @@ void purple() {
     printf("\033[0;35m");
 }
 
-
 void reset() {
     printf("\033[0;37m");
 }
-//
