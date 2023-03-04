@@ -45,7 +45,7 @@ int main()
             printf("erreur de scan. reessayez.\n");
             printf(" Entrez le nombre de lignes (min %d et max %d)\n", RowMin, RowMax);
         }
-        int col = row;      //grille caree donc ligne = collonne.
+        int col = row;      //grille caree donc ligne = colonne.
 
         // On initialise la matrice pour stocker les bombes.
         int bomb[size][size];
